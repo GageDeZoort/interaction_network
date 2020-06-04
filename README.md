@@ -19,7 +19,7 @@ The code in the repo is organized as follows:
     * **a**:   a size (N<sub>segs</sub> x 1) vector whose s<sup>th</sup> entry is 0 if the segment s connects opposite-layer hits and 1 if segment s connects same-layer hits
 *   **model/interaction_network.py**: produces edge weights for each segment by applying a relational model to the hit/segment interactions, aggregating the resulting effects for each receiving hit, re-embedding the hit features with an object model, and re-applying the relational model to each interaction
 *   **model/relational_model.py**: a MLP that outputs 1 parameter per segment, which we interpret as an edge weight (truth probability)
-*   **model/object_model.py**: a MLP that outputs 3 parameters per hit, which are the re-embedded position featatures of the hit
+*   **model/object_model.py**: a MLP that outputs 3 parameters per hit, which are the re-embedded position features of the hit
 
 ## Training
 The script **train_IN.py** builds and trains an IN on pre-processed TrackML graphs. The training data is organzied into mini-batches, which are used to optimize an RMS loss function via the adam optimizer. The IN is tested on a separate sample of pre-processed graphs, producing output including confusion matrices, a ROC curve, TPR/TNR/FNR/FPR curves, and a discriminant plot. 
