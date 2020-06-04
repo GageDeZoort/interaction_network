@@ -34,4 +34,5 @@ The **prep_IN.slurm** and **train_IN.slurm** scripts submit the pre-processing a
 
 ## References
 [1] “Interaction networks for learning about objects relations and physics”, [arXiv:1612.00222](https://arxiv.org/abs/1612.00222)
+
 [2] HEP.TrkX [Layer Pairs Implementation](https://github.com/HEPTrkX/heptrkx-gnn-tracking/blob/master/prepare.py)
