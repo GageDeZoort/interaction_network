@@ -1,6 +1,5 @@
 #!/bin/bash
-#SBATCH -o ./job_reports/output.%a.out # STDOUT
-#SBATCH --job-name=LP_Train      # create a short name for your job
+#SBATCH --job-name=LP_prep       # create a short name for your job
 #SBATCH --nodes=1                # node count
 #SBATCH --ntasks=1               # total number of tasks across all nodes
 #SBATCH --cpus-per-task=1        # cpu-cores per task (>1 if multi-threaded tasks)
@@ -13,4 +12,4 @@ module purge
 module load anaconda3
 conda activate gnnenv
 
-python train_IN.py -n 1000 -p 'LP'
+python prep_LP.py configs/prep_LP.yaml

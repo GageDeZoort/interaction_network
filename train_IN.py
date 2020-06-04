@@ -116,9 +116,13 @@ def confusionPlot(true_seg, false_seg, name):
     plt.clf()
 
     plt.scatter(FPR, TPR, color='mediumslateblue')
+    plt.grid(True)
+    plt.ylim(0,1)
+    plt.xlim(0,1)
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.savefig("plots/ROC.png")
+    plt.clf()
 
 args = parse_args()
 prep = args.prep
