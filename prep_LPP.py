@@ -15,7 +15,7 @@ import trackml.dataset
 import time
 
 # Locals
-from Model.Graph import Graph, save_graphs
+from models.graph import Graph, save_graphs
 
 def parse_args():
     """Parse command line arguments."""
