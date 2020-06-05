@@ -2,6 +2,20 @@
 ## Overview
 This repo is based on interaction network (IN) model [1], a graph neural network (GNN) architecture that applies relational and object models in stages to infer abstract interactions and object dynamics. 
 
+## Quickstart
+Use config files located in **configs/** to run the preprocessing scripts (**prep_LP.py** and **prep_LPP.py**) and the training script (**train_IN.py**):
+```
+python prep_LP.py configs/prep_LP.yaml
+python prep_LPP.py configs/prep_LPP.yaml
+python train_IN.py configs/train_IN.yaml
+```
+Alternatively, you may submit the pre-processing and training scripts as jobs on the Tiger cluster by running:
+```
+sbatch prep_IN.slurm
+sbatch train_IN.slurm
+```
+Among other things, the config files stipulate the input and/or output directories for their corresponding scripts. The training script outputs trained instances of the IN to the **trained_models** directory and plots to the **plots** directory. 
+
 ## Dataset 
 This model is tested and trained with events from the [Kaggle TrackML dataset](https://www.kaggle.com/c/trackml-particle-identification). TrackML simulates high pileup tracks inside a general-purpose particle tracker, supplying simulated hits and particles, as well as ground truth information. 
 
@@ -28,7 +42,7 @@ The script **train_IN.py** builds and trains an IN on pre-processed TrackML grap
 The **prep_IN.slurm** and **train_IN.slurm** scripts submit the pre-processing and training scripts as jobs to a slurm-based job submission system.
 
 ## To-Do
-* Move the plotting stage of **train_IN.py** to an external script
+* Turn **plots/plot_functions.py** into a stand-alone plotting script
 * Optimize the discriminant calculations
 * Write the mini-batches in native PyTorch
 
