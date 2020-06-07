@@ -14,3 +14,4 @@ module load anaconda3
 conda activate gnnenv
 
 python train_IN.py configs/train_IN.yaml
+python plot_IN.py configs/train_IN.yaml
