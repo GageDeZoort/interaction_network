@@ -3,18 +3,19 @@
 This repo is based on interaction network (IN) model [1], a graph neural network (GNN) architecture that applies relational and object models in stages to infer abstract interactions and object dynamics. 
 
 ## Quickstart
-Use config files located in **configs/** to run the preprocessing scripts (**prep_LP.py** and **prep_LPP.py**) and the training script (**train_IN.py**):
+Use config files located in **configs/** to run the preprocessing scripts (**prep_LP.py** and **prep_LPP.py**), the plotting script (**plot_IN.yaml**) the training script (**train_IN.py**):
 ```
 python prep_LP.py configs/prep_LP.yaml
 python prep_LPP.py configs/prep_LPP.yaml
+python plot_IN.py configs/train_IN.yaml
 python train_IN.py configs/train_IN.yaml
 ```
-Alternatively, you may submit the pre-processing and training scripts as jobs on the Tiger cluster by running:
+The training script and the plotting script take the same configuration file argument, as **train_IN.py** writes trained INs to the **trained_models/** directory and the plotting script reads these models in, outputting plots to the **plots** directory. To test/develop **plot_IN.py**, a few examples of trained INs are available in the **trained_models** directory. Alternatively, you may submit the pre-processing and training scripts as jobs on the Tiger cluster by running:
 ```
-sbatch prep_IN.slurm
-sbatch train_IN.slurm
+sbatch slurm/prep_IN.slurm
+sbatch slurm/train_IN.slurm
 ```
-Among other things, the config files stipulate the input and/or output directories for their corresponding scripts. The training script outputs trained instances of the IN to the **trained_models** directory and plots to the **plots** directory. 
+Among other things, the config files stipulate the input and/or output directories for their corresponding scripts. The training script outputs trained instances of the IN to the **trained_models** directory and plots to the **plots/** directory. 
 
 ## Dataset 
 This model is tested and trained with events from the [Kaggle TrackML dataset](https://www.kaggle.com/c/trackml-particle-identification). TrackML simulates high pileup tracks inside a general-purpose particle tracker, supplying simulated hits and particles, as well as ground truth information. 
