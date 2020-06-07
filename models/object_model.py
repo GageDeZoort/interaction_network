@@ -18,6 +18,8 @@ class ObjectModel(nn.Module):
         self.layers = nn.Sequential(
             nn.Linear(input_size, hidden_size),
             nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
             nn.Linear(hidden_size, 3)
         )
 
