@@ -99,7 +99,9 @@ test_graphs = [graphs[(train_size-1)+i][1] for i in range(test_size)]
 test_O, test_Rs, test_Rr, test_Ra, test_y = get_inputs(test_graphs)
 
 save_epochs = np.arange(0, n_epoch, save_every)
-if (verbose): print(" --> Saving the following epochs:\n", save_epochs)
+if (verbose):
+    print(" --> Saving the following epochs:", save_epochs)
+    print(" --> Saving the last {0} epochs".format(save_last))
 
 test_losses, train_losses, batch_losses = [], [], []
 for epoch in range(n_epoch):
@@ -127,7 +129,7 @@ for epoch in range(n_epoch):
     train_losses.append(batch_loss)
     test_losses.append(np.sqrt(loss.data))
 
-    if epoch in save_epochs:
+    if (epoch in save_epochs) or (epoch  > n_epoch - save_last):
         outfile = "{0}/{1}_epoch{2}.pt".format(model_outdir, job_name, epoch)
         torch.save(interaction_network.state_dict(), outfile)
 
