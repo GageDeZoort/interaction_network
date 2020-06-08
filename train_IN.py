@@ -87,7 +87,8 @@ graphs = get_graphs(graph_dir)
 object_dim, relation_dim, effect_dim = 3, 1, 1
 interaction_network = InteractionNetwork(object_dim, relation_dim, effect_dim)
 optimizer = optim.Adam(interaction_network.parameters())
-criterion = nn.MSELoss()
+#criterion = nn.MSELoss()
+criterion = nn.BCELoss()
 
 # config mini-batch
 train_size, test_size = 800, 200
@@ -124,7 +125,7 @@ for epoch in range(n_epoch):
         batch_losses.append(batch_loss)
     
     predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
-    loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
+    #loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
 
     train_losses.append(batch_loss)
     test_losses.append(np.sqrt(loss.data))

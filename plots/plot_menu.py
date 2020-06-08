@@ -40,11 +40,11 @@ def confusionPlot(true_seg, false_seg, filename):
     plt.clf()
 
 def plotROC(true_seg, false_seg, filename):
-    cuts = np.logspace(-4, 0, 140)
+    cuts = np.logspace(-6, 0, 1000)
     matrices = [confusionMatrix(true_seg, false_seg, i) for i in cuts]
     plt.scatter([matrices[i][1][0] for i in range(len(cuts))], 
                 [matrices[i][0][0] for i in range(len(cuts))], 
-                color='goldenrod', marker='h', s=1.8)
+                color='goldenrod', marker='h', s=2.2)
     plt.grid(True)
     plt.ylim(0,1)
     plt.xlim(0,1)
