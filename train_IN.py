@@ -126,6 +126,7 @@ for epoch in range(n_epoch):
     
     predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
     #loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
+    loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
 
     train_losses.append(batch_loss)
     test_losses.append(np.sqrt(loss.data))
