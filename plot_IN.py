@@ -71,17 +71,23 @@ interaction_network.load_state_dict(torch.load(models[-1]))
 interaction_network.eval()
 predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
 
+criterion = nn.BCELoss()
+losses = [criterion(predicted[i], test_y[i]) for i in range(size)]
+print(losses)
+
 # shape up data for analysis
+out = predicted
 predicted = torch.cat(predicted, dim=0)
+to_block_diagram = predicted
 predicted = np.array([float(predicted[i].data[0])
                       for i in range(len(predicted))])
-test_y = torch.cat(test_y, dim=0)
-test_y = np.array([float(test_y[i].data[0])
-                   for i in range(len(test_y))])
+target = torch.cat(test_y, dim=0)
+target = np.array([float(target[i].data[0])
+                   for i in range(len(target))])
 
-real_seg_idx = (test_y==1).nonzero()[:][0]
+real_seg_idx = (target==1).nonzero()[:][0]
 real_seg = predicted[real_seg_idx]
-fake_seg_idx = (test_y==0).nonzero()[:][0]
+fake_seg_idx = (target==0).nonzero()[:][0]
 fake_seg = predicted[fake_seg_idx]
 
 # order some plots
@@ -91,5 +97,21 @@ for i in np.arange(0, 1, 0.01):
     testConfusion = pm.confusionMatrix(real_seg, fake_seg, i)
     print(i, testConfusion)
 
+
+sort_idx = np.argsort(losses)
+
 pm.confusionPlot(real_seg, fake_seg, "plots/confusions_{0}.png".format(job_name))
 pm.plotROC(real_seg, fake_seg, "plots/ROC_{0}.png".format(job_name))
+
+for num, i in enumerate(sort_idx[-3:]):
+    pm.draw_graph_rz(test_O[i], test_Rr[i], test_Rs[i], test_y[i].squeeze(), out[i].squeeze(),
+                     filename="plots/rz_best{0}_{1}.png".format(num, job_name))
+    pm.draw_graph_xy(test_O[i], test_Rr[i], test_Rs[i], test_y[i].squeeze(), out[i].squeeze(),
+                     filename="plots/xy_best{0}_{1}.png".format(num, job_name))
+    
+for num, i in enumerate(sort_idx[:3]):
+    pm.draw_graph_rz(test_O[i], test_Rr[i], test_Rs[i], test_y[i].squeeze(), out[i].squeeze(),
+                     filename="plots/rz_worst{0}_{1}.png".format(num, job_name))
+    pm.draw_graph_xy(test_O[i], test_Rr[i], test_Rs[i], test_y[i].squeeze(), out[i].squeeze(),
+                     filename="plots/xy_worst{0}_{1}.png".format(num, job_name))
+

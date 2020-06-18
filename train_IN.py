@@ -4,6 +4,7 @@ import time
 import argparse
 
 import yaml
+import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
@@ -30,8 +31,7 @@ def get_graphs(d):
           return [("event<id1>", graph1, size), ...]
     """
     files = os.listdir(d)
-    return np.array([(int(f.split('_')[0].split('t00000')[1]), 
-                      load_graph(d+f)) for f in files])
+    return [load_graph(d+f) for f in files]
 
 def get_inputs(graphs):
     size = len(graphs)
@@ -46,14 +46,23 @@ def get_inputs(graphs):
     y  = [Variable(torch.FloatTensor(graphs[i].y)).unsqueeze(0).t()
           for i in range(size)]
     return O, Rs, Rr, Ra, y
+    
+def get_batches(graphs, train_size, batch_size):
+    batches = []
+    n_batches = int(float(train_size)/batch_size)
+    for batch in range(n_batches):
+        rand_idx  = [random.randint(0, train_size) for _ in range(batch_size)]
+        batches.append([graphs[i] for i in rand_idx])
+    return batches
+        
 
 def plotLosses(test_losses, train_losses, name):
-    plt.plot(test_losses,  color='mediumslateblue', label="Training",
+    plt.plot(test_losses,  color='mediumslateblue', label="Testing",
              marker='h', lw=0, ms=1.4)
-    plt.plot(train_losses, color='mediumseagreen',  label="Testing",
+    plt.plot(train_losses, color='mediumseagreen',  label="Training",
              marker='h', lw=0, ms=1.4)
     plt.xlabel("Epoch")
-    plt.ylabel("RMS Loss")
+    plt.ylabel("Loss")
     plt.legend(loc='upper right')
     plt.savefig(name, dpi=1200)
     plt.clf()
@@ -86,9 +95,9 @@ graphs = get_graphs(graph_dir)
 # objects: (r, phi, z); relations: (0); effects: (weight) 
 object_dim, relation_dim, effect_dim = 3, 1, 1
 interaction_network = InteractionNetwork(object_dim, relation_dim, effect_dim)
-optimizer = optim.Adam(interaction_network.parameters())
-#criterion = nn.MSELoss()
-criterion = nn.BCELoss()
+criterion = torch.nn.BCELoss()
+optimizer = optim.Adam(interaction_network.parameters(), lr=0.0001)
+category_weights = np.array([1.0, 0.5])
 
 # config mini-batch
 train_size, test_size = 800, 200
@@ -96,7 +105,8 @@ batch_size = int(float(train_size)/n_batch)
 if (verbose): print(" --> Mini-Batch: batch_size={0}".format(batch_size))
 
 # prepare test graphs
-test_graphs = [graphs[(train_size-1)+i][1] for i in range(test_size)]
+test_graphs =  graphs[train_size:]
+train_graphs = graphs[:train_size]
 test_O, test_Rs, test_Rr, test_Ra, test_y = get_inputs(test_graphs)
 
 save_epochs = np.arange(0, n_epoch, save_every)
@@ -106,29 +116,34 @@ if (verbose):
 
 test_losses, train_losses, batch_losses = [], [], []
 for epoch in range(n_epoch):
-    print("Epoch #", epoch)
-    batch_loss = 100
+    #print("Epoch #", epoch)
     
-    # loss computed on a per-batch basis
-    for b in range(n_batch):
-        rand_idx  = [random.randint(0, train_size) for _ in range(batch_size)]
-        batch_of_graphs = [graphs[i][1] for i in rand_idx]
-
-        O, Rs, Rr, Ra, y = get_inputs(batch_of_graphs)
-
+    start_time = time.time()
+    batches = get_batches(graphs, train_size, batch_size)
+    t = tqdm.tqdm(enumerate(batches), total=n_batch)
+    optimizer.zero_grad()
+    epoch_loss = 0.0
+    for b, data in t:
+        O, Rs, Rr, Ra, y = get_inputs(data)
         predicted = interaction_network(O, Rs, Rr, Ra)
-        loss = criterion(torch.cat(predicted, dim=0), torch.cat(y, dim=0))
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        batch_loss = np.sqrt(loss.data)
-        batch_losses.append(batch_loss)
-    
-    predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
-    #loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
-    loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
 
-    train_losses.append(batch_loss)
+        batch_loss = 0.0
+        for g in range(batch_size):
+            batch_loss += criterion(predicted[g], y[g])/batch_size
+
+        epoch_loss += batch_loss
+        batch_losses.append(batch_loss)
+
+        optimizer.zero_grad()
+        batch_loss.backward()
+        optimizer.step()
+        t.set_description("batch_loss = %.5f" % batch_loss)
+        t.refresh()
+        
+    train_losses.append(epoch_loss/n_batch)
+    predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
+    loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
+   
     test_losses.append(np.sqrt(loss.data))
 
     if (epoch in save_epochs) or (epoch  > n_epoch - save_last):

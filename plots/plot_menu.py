@@ -1,5 +1,134 @@
+import tqdm
+import torch
+from torchviz import make_dot
 import numpy as np
-import matplotlib.pyplot as plt   
+import matplotlib.pyplot as plt 
+import matplotlib.patches as mpatches  
+
+def draw_graph_rz(X, Ri, Ro, y, out,                   
+                  cut=0.5, filename='plots/rz.png'):
+    
+    # outgoing and incoming segments
+    # to features, dim = (N_hits, 3)
+    feats_o = torch.matmul(Ro.t(), X)
+    feats_i = torch.matmul(Ri.t(), X)
+
+    X = X.detach().numpy()
+    Ri = Ri.detach().numpy()
+    Ro = Ro.detach().numpy()
+    y = y.detach().numpy()
+    out = out.detach().numpy()
+    N = len(y)
+    result = np.array([((y[i] == 1 and out[i] >= cut), # true positive
+                        (y[i] == 1 and out[i] <  cut), # false negative
+                        (y[i] == 0 and out[i] >  cut), # false positive
+                        (y[i] == 0 and out[i] <= cut)) # true negative
+                       for i in range(N)])
+    
+    for i in range(len(X)):
+        plt.scatter(X[i][2], X[i][0], c='silver', linewidths=0, marker='s', s=8)
+
+    for i in range(N):
+        if (result[i][0]):
+            plt.plot((feats_o[i][2], feats_i[i][2]), 
+                     (feats_o[i][0], feats_i[i][0]), 'go-', lw=0.4, ms=0.2)
+        if (result[i][2]): # false positive
+            plt.plot((feats_o[i][2], feats_i[i][2]),
+                     (feats_o[i][0], feats_i[i][0]), 'ro-', lw=0.4, ms=0.2, alpha=0.5)
+        if (result[i][1]): # false negative
+            plt.plot((feats_o[i][2], feats_i[i][2]),
+                     (feats_o[i][0], feats_i[i][0]), 'bo-', lw=0.4, ms=0, alpha=0.5)
+    
+    red_patch = mpatches.Patch(color='red', label='False Positive')
+    blue_patch = mpatches.Patch(color='blue', label='False Negative')
+    green_patch = mpatches.Patch(color='green', label='True Positive')
+    plt.legend(handles=[green_patch, blue_patch, red_patch])
+    plt.ylabel("R [m]")
+    plt.xlabel("z [m]")
+    plt.savefig(filename, dpi=1200)
+    plt.clf()
+
+
+def draw_graph_xy(X, Ri, Ro, y, out,
+                  cut=0.5, filename='plots/xy.png'):
+
+    # outgoing and incoming segments
+    # to features, dim = (N_hits, 3)
+    feats_o = torch.matmul(Ro.t(), X)
+    feats_i = torch.matmul(Ri.t(), X)
+
+    X = X.detach().numpy()
+    Ri = Ri.detach().numpy()
+    Ro = Ro.detach().numpy()
+    y = y.detach().numpy()
+    out = out.detach().numpy()
+    N = len(y)
+    result = np.array([((y[i] == 1 and out[i] >= cut), # true positive
+                        (y[i] == 1 and out[i] <  cut), # false negative
+                        (y[i] == 0 and out[i] >  cut), # false positive
+                        (y[i] == 0 and out[i] <= cut)) # true negative
+                       for i in range(N)])
+
+    for i in range(len(X)):
+        plt.scatter(X[i][0]*np.cos(X[i][1]*np.pi), 
+                    X[i][0]*np.sin(X[i][1]*np.pi), 
+                    c='silver', linewidths=0, marker='s', s=8)
+
+    for i in range(N):
+        if (result[i][0]):
+            plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi), 
+                      feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
+                      (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi), 
+                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'go-', lw=0.4, ms=0.2)
+        if (result[i][2]): # false positive
+            plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi),
+                      feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
+                     (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi),
+                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'ro-', lw=0.4, ms=0.2, alpha=0.5)
+        if (result[i][1]): # false negative
+            plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi),
+                      feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
+                     (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi),
+                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'bo-', lw=0.4, ms=0, alpha=0.5)
+
+    red_patch = mpatches.Patch(color='red', label='False Positive')
+    blue_patch = mpatches.Patch(color='blue', label='False Negative')
+    green_patch = mpatches.Patch(color='green', label='True Positive')
+    plt.legend(handles=[green_patch, blue_patch, red_patch])
+    plt.ylabel("y [m]")
+    plt.xlabel("x [m]")
+    plt.savefig(filename, dpi=1200)
+    plt.clf()
+
+def make_block_diagram(filename, prediction):    
+    """InteractionNetwork(
+        (relational_model): RelationalModel(
+            (layers): Sequential(
+                (0): Linear(in_features=7, out_features=150, bias=True)
+                (1): ReLU()
+                (2): Linear(in_features=150, out_features=150, bias=True)
+                (3): ReLU()
+                (4): Linear(in_features=150, out_features=150, bias=True)
+                (5): ReLU()
+                (6): Linear(in_features=150, out_features=1, bias=True)
+                (7): Sigmoid()
+            )
+        )
+        (object_model): ObjectModel(
+            (layers): Sequential(
+                (0): Linear(in_features=4, out_features=100, bias=True)
+                (1): ReLU()
+                (2): Linear(in_features=100, out_features=100, bias=True)
+                (3): ReLU()
+                (4): Linear(in_features=100, out_features=3, bias=True)
+            )
+        )
+    )"""
+    dot = make_dot(prediction) #params=dict(model.named_parameters()))
+    print(dot)
+    dot.format = 'png'
+    dot.render(filename)
+
 
 def plotDiscriminant(true_seg, false_seg, nBins, filename):
     plt.hist(true_seg, nBins, color='blue', label='Real Segments', alpha=0.7)
