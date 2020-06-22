@@ -169,7 +169,7 @@ def split_detector_sections(hits, phi_edges, eta_edges):
     return hits_sections
 
 def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
-                  eta_range, phi_range, phi_slope_max, z0_max):
+                  eta_range, phi_range, phi_slope_max, z0_max, phi_reflect):
     # Load the data
     evtid = int(prefix[-9:])
     logging.info('Event %i, loading data' % evtid)
@@ -189,6 +189,7 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
     # Graph features and scale
     feature_names = ['r', 'phi', 'z']
     feature_scale = np.array([1000., np.pi / n_phi_sections, 1000.])
+    if (phi_reflect): feature_scale[1] *= -1
 
     # Define adjacent layers
     n_det_layers = 4
@@ -202,7 +203,7 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
                               feature_names=feature_names,
                               feature_scale=feature_scale)
               for section_hits in hits_sections]
-
+    
     # Write these graphs to the output directory
     try:
         base_prefix = os.path.basename(prefix)
@@ -210,7 +211,8 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
                      for i in range(len(graphs))]
     except Exception as e:
         logging.info(e)
-    logging.info('Event %i, writing graphs', evtid)
+    
+    logging.info('Event %i, writing graphs', evtid)    
     save_graphs(graphs, filenames)
 
 def main():

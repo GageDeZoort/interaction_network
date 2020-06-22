@@ -9,9 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.utils.data import Dataset, DataLoader
 import matplotlib
 matplotlib.use('pdf')
 from matplotlib import pyplot as plt
@@ -35,8 +33,8 @@ def get_graphs(d):
 
 def get_inputs(graphs):
     size = len(graphs)
-    O  = [Variable(torch.FloatTensor(graphs[i].X))
-          for i in range(size)]
+    O = [Variable(torch.FloatTensor(graphs[i].X))
+         for i in range(size)]
     Rs = [Variable(torch.FloatTensor(graphs[i].Ro))
           for i in range(size)]
     Rr = [Variable(torch.FloatTensor(graphs[i].Ri))
@@ -46,15 +44,6 @@ def get_inputs(graphs):
     y  = [Variable(torch.FloatTensor(graphs[i].y)).unsqueeze(0).t()
           for i in range(size)]
     return O, Rs, Rr, Ra, y
-    
-def get_batches(graphs, train_size, batch_size):
-    batches = []
-    n_batches = int(float(train_size)/batch_size)
-    for batch in range(n_batches):
-        rand_idx  = [random.randint(0, train_size) for _ in range(batch_size)]
-        batches.append([graphs[i] for i in rand_idx])
-    return batches
-        
 
 def plotLosses(test_losses, train_losses, name):
     plt.plot(test_losses,  color='mediumslateblue', label="Testing",
@@ -76,75 +65,79 @@ model_outdir = config['model_outdir']
 plot_outdir  = config['plot_outdir']
 verbose = config['verbose']
 prep, pt_cut = config['prep'], config['pt_cut']
-n_epoch, n_batch = config['n_epoch'], config['n_batch']
+n_epoch, batch_size = config['n_epoch'], config['batch_size']
 save_every = config['save_every_n_epoch']
 save_last  = config['save_last_n_epoch']
+phi_reflect = config['phi_reflect']
+tag = config['tag']
 
 # job name, ex. "LP_0p5_1200"
-job_name = "{0}_{1}_{2}".format(prep, pt_cut, n_epoch)
+job_name = "{0}_{1}_{2}_{3}".format(prep, pt_cut, n_epoch, tag)
 
 if (verbose):
     print('\nBeginning', job_name)
-    print(' --> Writing models to', model_outdir)
-    print(' --> Writing plots to', plot_outdir)
+    print(' ... writing models to', model_outdir)
+    print(' ... writing plots to', plot_outdir)
 
 # pull 1000 graphs from the train_1 sample
 graph_dir = "/tigress/jdezoort/IN_samples_large/IN_{0}_{1}/".format(prep, pt_cut)
-graphs = get_graphs(graph_dir)
+graphs = []
+if (phi_reflect):
+    phi_graph_dir = "/tigress/jdezoort/IN_samples_large/IN_{0}_{1}_phi_reflect/".format(prep, pt_cut)
+    graphs += get_graphs(phi_graph_dir)[0:800]
+graphs += get_graphs(graph_dir)
+
+if (verbose): print(" ... n_graphs={0}".format(len(graphs)))
 
 # objects: (r, phi, z); relations: (0); effects: (weight) 
 object_dim, relation_dim, effect_dim = 3, 1, 1
 interaction_network = InteractionNetwork(object_dim, relation_dim, effect_dim)
 criterion = torch.nn.BCELoss()
-optimizer = optim.Adam(interaction_network.parameters(), lr=0.0001)
-category_weights = np.array([1.0, 0.5])
+optimizer = optim.Adam(interaction_network.parameters(), lr=0.001)
 
 # config mini-batch
 train_size, test_size = 800, 200
-batch_size = int(float(train_size)/n_batch)
-if (verbose): print(" --> Mini-Batch: batch_size={0}".format(batch_size))
+if (phi_reflect): train_size, test_size = 1600, 200
+
+n_batch = int(float(train_size)/batch_size)
+if (verbose): print(" ... batch_size={0}".format(batch_size))
 
 # prepare test graphs
-test_graphs =  graphs[train_size:]
-train_graphs = graphs[:train_size]
-test_O, test_Rs, test_Rr, test_Ra, test_y = get_inputs(test_graphs)
+test_O, test_Rs, test_Rr, test_Ra, test_y = get_inputs(graphs[train_size:])
+if (verbose): print(" ... train_size={0}, test_size={1}".format(train_size, len(test_y)))
 
 save_epochs = np.arange(0, n_epoch, save_every)
 if (verbose):
-    print(" --> Saving the following epochs:", save_epochs)
-    print(" --> Saving the last {0} epochs".format(save_last))
+    print(" ... saving the following epochs:", save_epochs)
+    print(" ... saving the last {0} epochs".format(save_last))
 
 test_losses, train_losses, batch_losses = [], [], []
 for epoch in range(n_epoch):
-    #print("Epoch #", epoch)
-    
     start_time = time.time()
-    batches = get_batches(graphs, train_size, batch_size)
-    t = tqdm.tqdm(enumerate(batches), total=n_batch)
-    optimizer.zero_grad()
     epoch_loss = 0.0
-    for b, data in t:
-        O, Rs, Rr, Ra, y = get_inputs(data)
+    batch_losses = []
+    for b in range(n_batch):
+        rand_idx = [random.randint(0, train_size) 
+                    for _ in range(batch_size)]
+        batch = [graphs[i] for i in rand_idx]
+        O, Rs, Rr, Ra, y = get_inputs(batch)
         predicted = interaction_network(O, Rs, Rr, Ra)
-
-        batch_loss = 0.0
-        for g in range(batch_size):
-            batch_loss += criterion(predicted[g], y[g])/batch_size
-
-        epoch_loss += batch_loss
-        batch_losses.append(batch_loss)
-
+        batch_loss = criterion(torch.cat(predicted, dim=0), 
+                               torch.cat(y, dim=0))
+        epoch_loss += batch_loss.item()
+        batch_losses.append(batch_loss.item())
         optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()
-        t.set_description("batch_loss = %.5f" % batch_loss)
-        t.refresh()
         
+    end_time = time.time()
     train_losses.append(epoch_loss/n_batch)
     predicted = interaction_network(test_O, test_Rs, test_Rr, test_Ra)
     loss = criterion(torch.cat(predicted, dim=0), torch.cat(test_y, dim=0))
-   
-    test_losses.append(np.sqrt(loss.data))
+    test_losses.append(loss.item())
+    print(" * Epoch {0}: time={1:2.2f}s, test_loss={2:0.3f}, train_loss={2:0.3f}"
+          .format(epoch, end_time-start_time, loss.item(), epoch_loss/n_batch))
+
 
     if (epoch in save_epochs) or (epoch  > n_epoch - save_last):
         outfile = "{0}/{1}_epoch{2}.pt".format(model_outdir, job_name, epoch)

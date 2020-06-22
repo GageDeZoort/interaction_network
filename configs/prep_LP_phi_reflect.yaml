@@ -1,6 +1,6 @@
 # Input/output configuration
 input_dir: /tigress/jdezoort/train_1
-output_dir: /tigress/jdezoort/IN_samples_large/IN_LP_2
+output_dir: /tigress/jdezoort/IN_samples_large/IN_LP_2_phi_reflect
 n_files: 1000
 
 # Graph building configuration
@@ -11,4 +11,4 @@ selection:
     n_phi_sections: 1
     n_eta_sections: 1
     eta_range: [-5, 5]
-    phi_reflect: false
+    phi_reflect: true

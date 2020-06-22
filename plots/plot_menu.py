@@ -5,8 +5,18 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib.patches as mpatches  
 
+
+def plot_losses(epochs, losses, filename):
+    plt.scatter(epochs, losses, c='mediumslateblue', linewidths=0)
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend(loc='upper right')
+    plt.savefig(filename, dpi=1200)
+    plt.clf()
+
 def draw_graph_rz(X, Ri, Ro, y, out,                   
-                  cut=0.5, filename='plots/rz.png'):
+                  cut=0.5, filename='plots/rz.png',
+                  highlight_errors=False):
     
     # outgoing and incoming segments
     # to features, dim = (N_hits, 3)
@@ -30,14 +40,20 @@ def draw_graph_rz(X, Ri, Ro, y, out,
 
     for i in range(N):
         if (result[i][0]):
-            plt.plot((feats_o[i][2], feats_i[i][2]), 
-                     (feats_o[i][0], feats_i[i][0]), 'go-', lw=0.4, ms=0.2)
+            if (highlight_errors):
+                plt.plot((feats_o[i][2], feats_i[i][2]), 
+                         (feats_o[i][0], feats_i[i][0]), 
+                         'go-', lw=0.1, ms=0.1, alpha=0.3)
+            else:
+                plt.plot((feats_o[i][2], feats_i[i][2]),
+                         (feats_o[i][0], feats_i[i][0]),
+                         'go-', lw=0.4, ms=0.2, alpha=0.5)
         if (result[i][2]): # false positive
             plt.plot((feats_o[i][2], feats_i[i][2]),
                      (feats_o[i][0], feats_i[i][0]), 'ro-', lw=0.4, ms=0.2, alpha=0.5)
         if (result[i][1]): # false negative
             plt.plot((feats_o[i][2], feats_i[i][2]),
-                     (feats_o[i][0], feats_i[i][0]), 'bo-', lw=0.4, ms=0, alpha=0.5)
+                     (feats_o[i][0], feats_i[i][0]), 'bo-', lw=0.4, ms=0.2, alpha=0.5)
     
     red_patch = mpatches.Patch(color='red', label='False Positive')
     blue_patch = mpatches.Patch(color='blue', label='False Negative')
@@ -50,7 +66,8 @@ def draw_graph_rz(X, Ri, Ro, y, out,
 
 
 def draw_graph_xy(X, Ri, Ro, y, out,
-                  cut=0.5, filename='plots/xy.png'):
+                  cut=0.5, filename='plots/xy.png',
+                  highlight_errors=False):
 
     # outgoing and incoming segments
     # to features, dim = (N_hits, 3)
@@ -76,20 +93,29 @@ def draw_graph_xy(X, Ri, Ro, y, out,
 
     for i in range(N):
         if (result[i][0]):
-            plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi), 
-                      feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
-                      (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi), 
-                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'go-', lw=0.4, ms=0.2)
+            if (highlight_errors):
+                plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi), 
+                          feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
+                         (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi), 
+                          feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 
+                         'go-', lw=0.1, ms=0.1, alpha=0.5)
+            else:
+                plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi),
+                          feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
+                         (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi),
+                          feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)),
+                         'go-', lw=0.4, ms=0.2, alpha=0.8)
+            
         if (result[i][2]): # false positive
             plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi),
                       feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
                      (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi),
-                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'ro-', lw=0.4, ms=0.2, alpha=0.5)
+                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'ro-', lw=0.4, ms=0.2, alpha=0.8)
         if (result[i][1]): # false negative
             plt.plot((feats_o[i][0]*np.cos(feats_o[i][1]*np.pi),
                       feats_i[i][0]*np.cos(feats_i[i][1]*np.pi)),
                      (feats_o[i][0]*np.sin(feats_o[i][1]*np.pi),
-                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'bo-', lw=0.4, ms=0, alpha=0.5)
+                      feats_i[i][0]*np.sin(feats_i[i][1]*np.pi)), 'bo-', lw=0.4, ms=0, alpha=0.8)
 
     red_patch = mpatches.Patch(color='red', label='False Positive')
     blue_patch = mpatches.Patch(color='blue', label='False Negative')

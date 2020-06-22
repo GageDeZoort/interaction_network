@@ -18,8 +18,8 @@ class InteractionNetwork(nn.Module):
     def __init__(self, object_dim, relation_dim, effect_dim):
         super(InteractionNetwork, self).__init__()
         
-        self.relational_model = RelationalModel(2*object_dim + relation_dim, effect_dim, 150)
-        self.object_model = ObjectModel(object_dim + effect_dim, 100)
+        self.relational_model = RelationalModel(2*object_dim + relation_dim, effect_dim, 250)
+        self.object_model = ObjectModel(object_dim + effect_dim, 200)
         
     def forward(self, objects, sender_relations, receiver_relations, relation_info):
         N = len(objects)
